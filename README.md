@@ -1,11 +1,1 @@
-# logistic-reg
-
-Logistic regression from scratch.""".
-
-Zero dependencies. Python 3.8+.
-
-## Usage
-
-```bash
-python3 logistic_reg.py --help
-```
+# logistic-reg\n\nZero-dependency Python implementation.\n\n## Usage\n\n```bash\npython3 logistic_reg.py\n```\n
