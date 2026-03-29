@@ -1,9 +1,14 @@
-# Logistic Regression
+# logistic-reg
 
-Logistic Regression — zero-dependency Python implementation.
+Logistic regression classifier
 
 ## Usage
 
 ```bash
-python3 logistic_reg.py
+python3 logistic_reg.py --help
 ```
+
+## Features
+
+- Zero dependencies (Python 3.8+)
+- Single file implementation

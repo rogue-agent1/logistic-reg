@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
-"""Logistic regression with gradient descent."""
-import sys, math, random
-
-def sigmoid(z): return 1/(1+math.exp(-max(-500,min(500,z))))
-
+"""logistic_reg - Logistic regression."""
+import sys,argparse,json,math,random
+def sigmoid(x):return 1/(1+math.exp(-max(-500,min(500,x))))
 class LogisticRegression:
-    def __init__(self, lr=0.01, epochs=1000):
-        self.lr, self.epochs = lr, epochs
-    def fit(self, X, y):
-        n, d = len(X), len(X[0])
-        self.w = [0.0]*d; self.b = 0.0
-        for _ in range(self.epochs):
-            for i in range(n):
-                z = sum(self.w[j]*X[i][j] for j in range(d)) + self.b
-                pred = sigmoid(z); err = pred - y[i]
-                for j in range(d): self.w[j] -= self.lr * err * X[i][j]
-                self.b -= self.lr * err
-    def predict_proba(self, X):
-        return [sigmoid(sum(self.w[j]*x[j] for j in range(len(x)))+self.b) for x in X]
-    def predict(self, X): return [1 if p >= 0.5 else 0 for p in self.predict_proba(X)]
-    def accuracy(self, X, y):
-        preds = self.predict(X)
-        return sum(p==t for p,t in zip(preds,y))/len(y)
-
+    def __init__(self,n_features,lr=0.1):
+        self.weights=[0]*n_features;self.bias=0;self.lr=lr
+    def predict_proba(self,x):return sigmoid(sum(w*xi for w,xi in zip(self.weights,x))+self.bias)
+    def predict(self,x):return 1 if self.predict_proba(x)>0.5 else 0
+    def train(self,X,y,epochs=100):
+        losses=[]
+        for ep in range(epochs):
+            total_loss=0
+            for xi,yi in zip(X,y):
+                p=self.predict_proba(xi);error=p-yi
+                for j in range(len(self.weights)):self.weights[j]-=self.lr*error*xi[j]
+                self.bias-=self.lr*error
+                total_loss+=-(yi*math.log(max(p,1e-10))+(1-yi)*math.log(max(1-p,1e-10)))
+            losses.append(round(total_loss/len(X),6))
+        return losses
 def main():
+    p=argparse.ArgumentParser(description="Logistic regression")
+    p.add_argument("--samples",type=int,default=200);p.add_argument("--epochs",type=int,default=100)
+    args=p.parse_args()
     random.seed(42)
-    X = [[random.gauss(0,1), random.gauss(0,1)] for _ in range(100)]
-    y = [1 if x[0]+x[1]>0 else 0 for x in X]
-    lr = LogisticRegression(lr=0.1, epochs=100); lr.fit(X, y)
-    print(f"Weights: {[f'{w:.3f}' for w in lr.w]}, bias: {lr.b:.3f}")
-    print(f"Train accuracy: {lr.accuracy(X, y)*100:.1f}%")
-
-if __name__ == "__main__": main()
+    X=[];y=[]
+    for _ in range(args.samples//2):
+        X.append([random.gauss(2,1),random.gauss(2,1)]);y.append(0)
+        X.append([random.gauss(5,1),random.gauss(5,1)]);y.append(1)
+    split=int(len(X)*0.8)
+    lr=LogisticRegression(2);losses=lr.train(X[:split],y[:split],args.epochs)
+    correct=sum(1 for xi,yi in zip(X[split:],y[split:]) if lr.predict(xi)==yi)
+    acc=correct/len(X[split:])
+    print(json.dumps({"epochs":args.epochs,"final_loss":losses[-1],"accuracy":round(acc,4),"weights":[round(w,4) for w in lr.weights],"bias":round(lr.bias,4)},indent=2))
+if __name__=="__main__":main()
