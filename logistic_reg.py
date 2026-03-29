@@ -1,50 +1,64 @@
 #!/usr/bin/env python3
-"""Logistic regression from scratch with gradient descent."""
-import sys, math, random
+"""logistic_reg: Logistic regression classifier."""
+import math, sys
 
-def sigmoid(x): return 1.0 / (1.0 + math.exp(-max(-500, min(500, x))))
+def sigmoid(z):
+    if z >= 0: return 1 / (1 + math.exp(-z))
+    ez = math.exp(z)
+    return ez / (1 + ez)
 
 class LogisticRegression:
-    def __init__(self, lr=0.01, n_iters=1000):
-        self.lr = lr; self.n_iters = n_iters; self.w = None; self.b = 0
-
-    def fit(self, X, y):
-        n, d = len(X), len(X[0])
-        self.w = [0.0] * d
-        for epoch in range(self.n_iters):
-            dw = [0.0] * d; db = 0
-            for i in range(n):
-                z = sum(self.w[j]*X[i][j] for j in range(d)) + self.b
-                pred = sigmoid(z); err = pred - y[i]
-                for j in range(d): dw[j] += err * X[i][j]
-                db += err
-            for j in range(d): self.w[j] -= self.lr * dw[j] / n
-            self.b -= self.lr * db / n
+    def __init__(self, n_features):
+        self.weights = [0.0] * n_features
+        self.bias = 0.0
 
     def predict_proba(self, x):
-        z = sum(self.w[j]*x[j] for j in range(len(x))) + self.b
+        z = sum(w * xi for w, xi in zip(self.weights, x)) + self.bias
         return sigmoid(z)
 
-    def predict(self, x): return 1 if self.predict_proba(x) >= 0.5 else 0
+    def predict(self, x):
+        return 1 if self.predict_proba(x) >= 0.5 else 0
 
-    def score(self, X, y):
-        return sum(1 for xi, yi in zip(X, y) if self.predict(xi) == yi) / len(y)
+    def fit(self, X, y, lr=0.1, epochs=1000):
+        n = len(X)
+        for _ in range(epochs):
+            for j in range(len(self.weights)):
+                grad = sum((self.predict_proba(X[i]) - y[i]) * X[i][j] for i in range(n)) / n
+                self.weights[j] -= lr * grad
+            grad_b = sum(self.predict_proba(X[i]) - y[i] for i in range(n)) / n
+            self.bias -= lr * grad_b
+
+    def accuracy(self, X, y):
+        preds = [self.predict(x) for x in X]
+        return sum(1 for p, yi in zip(preds, y) if p == yi) / len(y)
 
     def log_loss(self, X, y):
-        eps = 1e-15; n = len(y)
-        return -sum(yi*math.log(max(self.predict_proba(xi), eps)) + (1-yi)*math.log(max(1-self.predict_proba(xi), eps)) for xi, yi in zip(X, y)) / n
+        eps = 1e-15
+        total = 0
+        for xi, yi in zip(X, y):
+            p = max(min(self.predict_proba(xi), 1-eps), eps)
+            total += yi * math.log(p) + (1-yi) * math.log(1-p)
+        return -total / len(y)
 
-def main():
-    random.seed(42)
-    X = [[random.gauss(-1.5, 1), random.gauss(-1.5, 1)] for _ in range(50)] +         [[random.gauss(1.5, 1), random.gauss(1.5, 1)] for _ in range(50)]
-    y = [0]*50 + [1]*50
-    idx = list(range(100)); random.shuffle(idx)
-    X = [X[i] for i in idx]; y = [y[i] for i in idx]
-    lr = LogisticRegression(lr=0.1, n_iters=500); lr.fit(X[:80], y[:80])
-    print(f"Logistic Regression")
-    print(f"Weights: [{', '.join(f'{w:.4f}' for w in lr.w)}], bias: {lr.b:.4f}")
-    print(f"Train accuracy: {lr.score(X[:80], y[:80])*100:.1f}%")
-    print(f"Test accuracy: {lr.score(X[80:], y[80:])*100:.1f}%")
-    print(f"Log loss: {lr.log_loss(X[80:], y[80:]):.4f}")
+def test():
+    X = [[0,0],[0,1],[1,0],[1,1],[5,5],[5,6],[6,5],[6,6]]
+    y = [0,0,0,0,1,1,1,1]
+    model = LogisticRegression(2)
+    model.fit(X, y, lr=0.5, epochs=500)
+    assert model.predict([0.5, 0.5]) == 0
+    assert model.predict([5.5, 5.5]) == 1
+    assert model.accuracy(X, y) == 1.0
+    # Probabilities
+    p0 = model.predict_proba([0, 0])
+    p1 = model.predict_proba([6, 6])
+    assert p0 < 0.5
+    assert p1 > 0.5
+    # Sigmoid
+    assert abs(sigmoid(0) - 0.5) < 0.001
+    assert sigmoid(10) > 0.99
+    assert sigmoid(-10) < 0.01
+    print("All tests passed!")
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "test": test()
+    else: print("Usage: logistic_reg.py test")
