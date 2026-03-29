@@ -1,6 +1,10 @@
-# logistic_reg
-Single-file Python CLI tool. Zero dependencies, Python 3.8+.
+# logistic-reg
+
+Single-file Python CLI. Zero dependencies.
+
 ## Usage
+
 ```bash
-python3 logistic_reg.py --test
+python3 logistic_reg.py
+python3 logistic_reg.py test
 ```

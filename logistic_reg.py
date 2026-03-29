@@ -1,58 +1,44 @@
 #!/usr/bin/env python3
-"""logistic_reg - Logistic regression with gradient descent."""
-import sys, math
+"""Logistic regression with gradient descent."""
+import sys, math, random
 
-def sigmoid(z):
-    if z > 500: return 1.0
-    if z < -500: return 0.0
-    return 1.0 / (1.0 + math.exp(-z))
+def sigmoid(x): return 1/(1+math.exp(-max(-500,min(500,x))))
 
 class LogisticRegression:
     def __init__(self, lr=0.1, epochs=1000):
-        self.lr = lr
-        self.epochs = epochs
-        self.weights = []
-        self.bias = 0
-
+        self.lr, self.epochs = lr, epochs
+        self.w = self.b = None
     def fit(self, X, y):
-        n = len(X)
-        d = len(X[0])
-        self.weights = [0.0] * d
-        self.bias = 0.0
+        n, d = len(X), len(X[0])
+        self.w = [0.0]*d
+        self.b = 0.0
         for _ in range(self.epochs):
             for i in range(n):
-                z = sum(self.weights[j] * X[i][j] for j in range(d)) + self.bias
+                z = sum(self.w[j]*X[i][j] for j in range(d)) + self.b
                 pred = sigmoid(z)
-                error = pred - y[i]
+                err = pred - y[i]
                 for j in range(d):
-                    self.weights[j] -= self.lr * error * X[i][j] / n
-                self.bias -= self.lr * error / n
-
+                    self.w[j] -= self.lr * err * X[i][j] / n
+                self.b -= self.lr * err / n
     def predict_proba(self, x):
-        z = sum(self.weights[j] * x[j] for j in range(len(x))) + self.bias
-        return sigmoid(z)
-
-    def predict(self, x, threshold=0.5):
-        return 1 if self.predict_proba(x) >= threshold else 0
-
-    def accuracy(self, X, y):
-        correct = sum(1 for i in range(len(X)) if self.predict(X[i]) == y[i])
-        return correct / len(X)
+        return sigmoid(sum(self.w[j]*x[j] for j in range(len(x))) + self.b)
+    def predict(self, x):
+        return 1 if self.predict_proba(x) >= 0.5 else 0
 
 def test():
-    X = [[0,0],[0,1],[1,0],[1,1],[2,2],[3,3],[2,3],[3,2]]
-    y = [0, 0, 0, 0, 1, 1, 1, 1]
-    lr = LogisticRegression(lr=0.5, epochs=500)
+    random.seed(42)
+    X = [[random.gauss(2,1), random.gauss(2,1)] for _ in range(30)] +         [[random.gauss(-2,1), random.gauss(-2,1)] for _ in range(30)]
+    y = [1]*30 + [0]*30
+    lr = LogisticRegression(lr=0.1, epochs=500)
     lr.fit(X, y)
-    assert lr.predict([0, 0]) == 0
-    assert lr.predict([3, 3]) == 1
-    acc = lr.accuracy(X, y)
-    assert acc >= 0.75
-    p = lr.predict_proba([0, 0])
-    assert p < 0.5
-    p2 = lr.predict_proba([3, 3])
-    assert p2 > 0.5
-    print("All tests passed!")
+    correct = sum(1 for i in range(60) if lr.predict(X[i]) == y[i])
+    assert correct >= 50, f"Accuracy: {correct}/60"
+    p = lr.predict_proba([3, 3])
+    assert p > 0.7
+    p2 = lr.predict_proba([-3, -3])
+    assert p2 < 0.3
+    print("  logistic_reg: ALL TESTS PASSED")
 
 if __name__ == "__main__":
-    test() if "--test" in sys.argv else print("logistic_reg: Logistic regression. Use --test")
+    if len(sys.argv) > 1 and sys.argv[1] == "test": test()
+    else: print("Logistic regression")
