@@ -1,6 +1,6 @@
-# logistic-reg
+# Logistic Regression
 
-Logistic regression classifier
+Logistic Regression — zero-dependency, single-file Python CLI.
 
 ## Usage
 
@@ -8,7 +8,6 @@ Logistic regression classifier
 python3 logistic_reg.py --help
 ```
 
-## Features
+## License
 
-- Zero dependencies (Python 3.8+)
-- Single file implementation
+MIT
