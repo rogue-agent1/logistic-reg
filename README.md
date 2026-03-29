@@ -1,1 +1,9 @@
-# logistic-reg\n\nZero-dependency Python implementation.\n\n## Usage\n\n```bash\npython3 logistic_reg.py\n```\n
+# Logistic Regression
+
+Logistic Regression — zero-dependency Python implementation.
+
+## Usage
+
+```bash
+python3 logistic_reg.py
+```
